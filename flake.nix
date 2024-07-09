@@ -16,7 +16,7 @@
           packages = with pkgs; [ ruby_3_2 ];
         };
       });
-      packages = forEachSupportedSystem ({ pkgs }: let
+      packages = forEachSupportedSystem ({ pkgs }: with pkgs; let
         timex-original-software = pkgs.fetchurl {
           url = "https://assets.timex.com/downloads/TDL21D.EXE";
           hash = "sha256-8w5wNBROp3nH743NTHGc/+9ERchzQb6Y7uYyqlAEhZY=";
@@ -32,17 +32,23 @@
             7z e ./SETUP.EXE -o"$out" -r -y "${pattern}"
           '';
         };
+        gems = bundlerEnv {
+          name = "timex-datalink-cli";
+          gemdir  = ./.;
+        };
       in rec {
-        td150 = with pkgs; let
-          gems = bundlerEnv {
-            name = "td150-env";
-            gemdir  = ./.;
-          };
-        in writeShellApplication {
+        td150 = writeShellApplication {
           name = "td150";
           runtimeInputs = [ gems gems.wrappedRuby ];
           text = ''
-            exec ruby ${./timex.rb} "$@"
+            exec ruby ${./td150.rb} "$@"
+          '';
+        };
+        tdit = writeShellApplication {
+          name = "tdit";
+          runtimeInputs = [ gems gems.wrappedRuby ];
+          text = ''
+            exec ruby ${./tdit.rb} "$@"
           '';
         };
         sound-themes = timex-assets "sound-themes" "*.SPC";
