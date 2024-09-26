@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# Finds the first ttyACM device with manufacturer 'digistump.com'
+# This is useful for identifying my laptop adapter: https://github.com/nilp0inter/timex-datalink-arduino
+
+# Enable nullglob to handle the case where no ttyACM devices are present
+shopt -s nullglob
+
+# Collect all ttyACM devices into an array
+devices=(/dev/ttyACM*)
+
+# Check if the array is empty (no ttyACM devices found)
+if [ ${#devices[@]} -eq 0 ]; then
+    echo "No ttyACM devices found." >&2
+    exit 1
+fi
+
+# Iterate over each ttyACM device
+for dev in "${devices[@]}"; do
+    # Extract the manufacturer attribute using udevadm
+    manufacturer=$(udevadm info -a -n "$dev" | \
+        grep 'ATTRS{manufacturer}==' | \
+        head -n1 | \
+        sed 's/.*ATTRS{manufacturer}=="\(.*\)".*/\1/')
+
+    # Check if the manufacturer matches 'digistump.com'
+    if [ "$manufacturer" == "digistump.com" ]; then
+        echo "$dev"
+        exit 0
+    fi
+done
+
+# If no matching device was found, output an error message and exit with code 1
+echo "No device with manufacturer 'digistump.com' found." >&2
+exit 1
+

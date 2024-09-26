@@ -51,6 +51,10 @@
             exec ruby ${./tdit.rb} "$@"
           '';
         };
+        find_notebook_adapter = writeShellApplication {
+          name = "find_notebook_adapter";
+          text = builtins.readFile ./find_notebook_adapter;
+        };
         sound-themes = timex-assets "sound-themes" "*.SPC";
         wrist-apps = timex-assets "wrist-apps" "*.ZAP";
         default = td150;
