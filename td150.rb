@@ -120,12 +120,21 @@ end
 # Create anniversaries
 anniversaries = []
 if data["anniversaries"] && !options[:no_anniversaries]
+  current_year = Time.now.year
   anniversaries = data["anniversaries"].map do |anniversary|
+    anniversary_time = Time.parse(anniversary["time"])
+    
+    # Replace the year with the current year minus one
+    modified_time = Time.new(current_year - 1, anniversary_time.month, anniversary_time.day)
+
     TimexDatalinkClient::Protocol3::Eeprom::Anniversary.new(
-      time: Time.parse(anniversary["time"]),
+      time: modified_time,
       anniversary: anniversary["anniversary"]
     )
   end
+
+  # Sort anniversaries by date
+  anniversaries.sort_by!(&:time)
 end
 
 # Create phone numbers
