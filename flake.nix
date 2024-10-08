@@ -57,6 +57,10 @@
         };
         sound-themes = timex-assets "sound-themes" "*.SPC";
         wrist-apps = timex-assets "wrist-apps" "*.ZAP";
+        datalink-soundscheme-for-developers = pkgs.fetchurl {
+          url = "https://github.com/nilp0inter/datalink-soundscheme-for-developers/releases/download/v0.1/quietdl.spc";
+          hash = "sha256-4NdozrxtRr5dfRdEwMVSAuc8QAd09y9GDX+CANyFkkE=";
+        };
         default = td150;
       });
     };
