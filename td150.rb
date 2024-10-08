@@ -3,6 +3,20 @@ require "json"
 require "time"
 require "optparse"
 
+require "timex_datalink_client/helpers/crc_packets_wrapper"
+
+
+class TimexDatalinkClient
+  class Protocol3
+    class Beep
+      prepend Helpers::CrcPacketsWrapper
+      def packets
+        [ [0x23, 0x04, 0x3e, 0xa6, 0x01, 0xc7, 0x00, 0x28, 0x81] ]
+      end
+    end
+  end
+end
+
 # Function to parse the JSON data
 def parse_json_data(file_path)
   return {} unless file_path && File.exist?(file_path)
@@ -24,7 +38,10 @@ def parse_options
     no_anniversaries: false,
     no_phone_numbers: false,
     no_lists: false,
-    no_alarms: false
+    no_alarms: false,
+    no_time: false,
+    sync_length: 150,
+    start_beep: false,
   }
 
   OptionParser.new do |opts|
@@ -64,6 +81,18 @@ def parse_options
 
     opts.on("--no-alarms", "Skip creating alarms") do
       options[:no_alarms] = true
+    end
+
+    opts.on("--no-time", "Skip creating time models") do
+      options[:no_time] = true
+    end
+
+    opts.on("--sync-length LENGTH", Integer, "Specify the sync length (default: 150)") do |length|
+      options[:sync_length] = length
+    end
+
+    opts.on("--start-beep", "Send a start beep") do
+      options[:start_beep] = true
     end
   end.parse!
 
@@ -122,23 +151,27 @@ if data["lists"] && !options[:no_lists]
   end
 end
 
-time1 = Time.now
-time2 = time1.dup.utc
+# Create time models
+time_models = []
+if !options[:no_time]
+  time1 = Time.now
+  time2 = time1.dup.utc
 
-time_models = [
-  TimexDatalinkClient::Protocol3::Time.new(
-    zone: 1,
-    time: time1,
-    is_24h: true,
-    date_format: "%_d-%m-%y"
-  ),
-  TimexDatalinkClient::Protocol3::Time.new(
-    zone: 2,
-    time: time2,
-    is_24h: true,
-    date_format: "%y-%m-%d"
-  ),
-]
+  time_models = [
+    TimexDatalinkClient::Protocol3::Time.new(
+      zone: 1,
+      time: time1,
+      is_24h: true,
+      date_format: "%_d-%m-%y"
+    ),
+    TimexDatalinkClient::Protocol3::Time.new(
+      zone: 2,
+      time: time2,
+      is_24h: true,
+      date_format: "%y-%m-%d"
+    ),
+  ]
+end
 
 # Create alarms
 alarms = []
@@ -165,10 +198,16 @@ sound_options = if sound_options_data.empty?
                  end
 appointment_notification_minutes = data["appointment_notification_minutes"] || 0
 
+# Send a start beep
+start_beep = []
+if options[:start_beep]
+  start_beep = [TimexDatalinkClient::Protocol3::Beep.new]
+end
+
 models = [
-  TimexDatalinkClient::Protocol3::Sync.new,
-  TimexDatalinkClient::Protocol3::Start.new
-] + time_models + alarms
+  TimexDatalinkClient::Protocol3::Sync.new(length: options[:sync_length]),
+  TimexDatalinkClient::Protocol3::Start.new,
+] + start_beep + time_models + alarms
 
 models << TimexDatalinkClient::Protocol3::Eeprom.new(
   appointments: appointments,
