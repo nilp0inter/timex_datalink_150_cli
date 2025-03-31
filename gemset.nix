@@ -87,13 +87,11 @@
     groups = ["default"];
     platforms = [];
     source = {
-      fetchSubmodules = false;
-      rev = "a0a42d3d6cabc48af76ac08050d15eb19230dc90";
-      sha256 = "0kxs91az9iqddxw6xvbgi2qc11acp2zh0w94hwg5q69gibg41csc";
-      type = "git";
-      url = "https://github.com/synthead/timex_datalink_client";
+      remotes = ["https://rubygems.org"];
+      sha256 = "1lf69cx5kn4rhgrn28jany910dfd0vi22gnp784bzdxmv1d9rbw0";
+      type = "gem";
     };
-    version = "0.12.3";
+    version = "0.12.4";
   };
   tzinfo = {
     dependencies = ["concurrent-ruby"];
